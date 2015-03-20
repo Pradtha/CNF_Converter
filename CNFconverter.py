@@ -90,6 +90,8 @@ def deMorganAndInvolution(mylist):
 
 def operandListEquality(list1, list2):
 	test = False
+	if(len(list1) != len(list2)):
+		return False
 	if(isinstance(list1,list) and isinstance(list2,list)):
 		test = True
 		for x in list1:
@@ -142,7 +144,6 @@ def checkDNFClause(mylist):
 	if(mylist[0] == 'or'):
 		for i in range(1,len(mylist)):
 			if(isinstance(mylist[i],list)):
-				mylist[i] = checkDNFClause(mylist[i])
 				element = mylist[i]
 				if(element[0] == 'and' and mylist[0] == 'or'): 
 					andTerms = []
@@ -153,15 +154,18 @@ def checkDNFClause(mylist):
 					for orLiteral in mylist:
 						if((orLiteral not in operators) and (not(operandListEquality(orLiteral,mylist[i])))):
 							orTerms.append(orLiteral)
-					mylist = checkDNFClause(distributeOrOverAnd(andTerms,orTerms))
+					mylist = distributeOrOverAnd(andTerms,orTerms)
+					break;
+		return mylist
+	
 	return mylist
+
 		
 def distributeOrOverAnd(andTerms, orTerms):
 	returnList = ['and']
 	tempList = []
 	for andLiteral in andTerms:
-		for orLiteral in orTerms:
-			tempList.append(checkDNFClause(['or',andLiteral,orLiteral]))
+		tempList.append(checkDNFClause(['or',andLiteral]+orTerms))
 	returnList += tempList
 	return returnList
 	
