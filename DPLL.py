@@ -5,71 +5,71 @@ outputFile = open("CNF_sastisfiability.txt", "w")
 
 operators = ["not", "and", "or"]
 
-def extractLiterals(clause):
-	returnList = []
-	if(isinstance(clause,list)):
-		for literal in clause:
-			if (literal not in operators):
-				returnList += literal
+class index(object):
+	i=0
+
+	
+def booleanStringClause(clause):
+	if(not(isinstance(clause,list))):
+		return "var["+str(symbols.index(clause))+"]"
+	
 	else:
-		returnList = clause
-		
-	return returnList
+		if(clause[0] == 'not'):
+			return "not(var["+str(symbols.index(clause[1]))+"])"
+		else:
+			temp = "( "+booleanStringClause(clause[1]);
+			for i in range (2,len(clause)):
+				temp += " or " + booleanStringClause(clause[i])
+			temp += " )"
+			return temp
 			
-def checkComplement(literal):
-	test = False
-	symbol = "A"
-	if(isinstance(literal,list)):
-		test = True
-		symbol = literal[1]
-	else:
-		test = False
-		symbol = literal
-		
-	return test,symbol
-		
-			
-def findPureSymbol(symbols,clauses,model):
-	returnList = []
-	pureList = []
-	for symbol in symbols:
-		pureList += [symbol,0]
-	
-	for clause in clauses:
-		literalInClause = extractLiterals(clause)
-		for element in literalInClause:
-			test, literal = checkComplement(element)
-			symbol = pureList[pureList.index(literal)]
-			if(test==true and symbol[1]==0):
-				pureList[pureList.index(literal)] = [literal,1]
-			elif(test==false and symbol[1]==0):
-				pureList[pureList.index(literal)] == [literal,2]
-			elif (test==false and symbol[1]==1) or (test==true and symbol[1]==2):
-				pureList[pureList.index(literal)] == [literal,3]
-	
-	for element in pureList:
-		if element[1] == 1 :
-			returnList += [element[0],True]
-		elif element[1] == 2:
-			returnList += [element[0],False]
-			
-	return returnList
-	
-symbols = []
+
 def getSymbols(model):
 	global symbols
+
 	for element in model:
 		if(not(isinstance(element,list)) and element not in operators):
 			if(element not in symbols):
 				symbols += element
 		elif (isinstance(element,list)):
-			getSymbols(element)
+			symbols = getSymbols(element)
+	
+	return symbols
 	
 def getClauses(model):
-	global clauses
-	for element in model:
-		if(element != 'and' and element != 'or'):
-			clauses.append(element)
+	clauses = []
+	if(model[0] == 'and'):
+		for i in range(1,len(model)):
+			clauses.append(model[i])
+	else:
+		clauses.append(model)
+		
+	return clauses
+		
+def findPureSymbols(symbols,clauses,model):
+	symbols = getSymbols(model)
+	clauses = getClauses(model)
+	pureList = []
+	value = []
+	for symbol in symbols:
+		pureList.append(symbol)
+		value.append(0)
+		
+		
+def DPLL(clauses,symbols,model):
+	result = False
+	#print symbols, clauses
+	for clause in clauses:
+		print clause,"   ", booleanStringClause(clause)
+		
+	print "end of sentence"
+	
+	
+def DPLL_Satisfiable(sentence):
+	symbols = getSymbols(sentence)
+	clauses = getClauses(sentence)
+	#print symbols, clauses
+	return DPLL(clauses,symbols,sentence)
 
 linenum = 1
 sentCount = -1
@@ -90,10 +90,11 @@ else:
 		if(linenum == 1):
 			linenum = 2
 			continue
-		model = eval(line)
+		sentence = eval(line)
 		symbols = []
 		clauses = []
-		getSymbols(model)
-		getClauses(model)
-		print "symbols", symbols
-		print "clauses", clauses
+		model = []
+		variable = []
+		index.i=0
+		DPLL_Satisfiable(sentence)
+		#print booleanStringSenstence(sentence)
