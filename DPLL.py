@@ -1,9 +1,21 @@
 import sys
 
 inputFile = open(sys.argv[2])
-outputFile = open("CNF_sastisfiability.txt", "w")
+outputFile = open("CNF_satisfiability.txt", "w")
 
 operators = ["not", "and", "or"]
+
+def extractLiterals(clause):
+	literalList = []
+	if(not(isinstance(clause,list))):
+		return clause
+	else:
+		if(clause[0] == 'not'):
+			return clause[1]
+		else:
+			for i in range(1,len(clause)):
+				literalList.append(extractLiterals(clause[i]))
+	return literalList
 	
 def booleanStringClause(clause):
 	if(not(isinstance(clause,list))):
@@ -71,7 +83,7 @@ def updateValueList(complemented, value, index):
 def findPureSymbols(clauses,symbols):
 	pureList = []
 	value = []
-	
+	#print symbols
 	for symbol in symbols:
 		value.append(0)
 	
@@ -111,54 +123,116 @@ def findPureSymbols(clauses,symbols):
 	#print pureList
 	return pureList
 		
+def assignementEval(clauses,var):
+	result = True
+	trueClauses = []
+	#print "Asdf", clauses,var
+	for clause in clauses:
+		boolExpr = booleanStringClause(clause);
+		#print "expr", boolExpr
+		boolVal = eval(boolExpr)
+		 
+		if(boolVal == False):
+			result = False;
+		
+		elif(boolVal == True):
+			trueClauses.append(clause)
+			
+	#print "ret:", result,trueClauses			
+	return result,trueClauses
 		
 def DPLL(clauses,symbols,var):
-	result = False
-	trueClauses = []
-	#print symbols,"   ", clauses,"     ", var
-	result = True
-	for clause in clauses:
-		#print var, booleanStringClause(clause), eval(booleanStringClause(clause))
-		if(eval(booleanStringClause(clause)) == False):
-			result = False;
-			break;
-		elif(eval(booleanStringClause(clause)) == True):
-			trueClauses.append(clause)
-		else:
-			result = False
-			break;
-			
-	if(result == True):
+	#print "ini", clauses, symbols, var
+	result,trueClauses = assignementEval(clauses,var)
+	if(result==True):
 		return var
-	
-	else:
-		#print "asdf"
-		#print "end of sentence"
-		pureList = findPureSymbols(clauses,symbols)
-		#print "pure list",pureList
-		trueSymbols = []
-		if(len(pureList)>0):
-			for i in range(len(pureList)):
-				element = pureList[i]
-				index = symbols.index(element[0]);
-				trueSymbols.append(element[0])
-				var[index] = element[1]
-				
-			reqClauses = [x for x in clauses if not(x in trueClauses)]
-			reqSymbols = [x for x in trueSymbols if not(x in symbols)]
-			return DPLL(reqClauses,reqSymbols,var)
+		
+	pureList = findPureSymbols(clauses,symbols)
+	#print "pure list",pureList
+	if(len(pureList)>0):
+		#ptrueSymbols = []	
+		for i in range(len(pureList)):
+			element = pureList[i]
+			index = symbols.index(element[0]);
+			#print "symbols", symbols
+			#ptrueSymbols.append(symbols[index])
+			#print index
+			var[index] = element[1]
+		#print "var", var
+		presult, ptrueClauses = assignementEval(clauses,var)
+		if(presult == False):
+			#ptrueSymbols = ptrueSymbols[0]
+			#print "c,s", ptrueClauses
+			reqClauses = [x for x in clauses if not(x in ptrueClauses)]
+			#reqSymbols = [x for x in symbols if not(x in ptrueSymbols)]
+			#print "req",reqClauses
+			return DPLL(reqClauses,symbols,var)
+		
+		else:
+			return var
+		
+		
+class index(object):
+	i=0
+
+def SATAssignment(expr):
+	numOfBits = "{0:0"+str(len(symbols))+"b}"
+	returnList = []
+	for i in range(2**index.i - 1, -1, -1):
+		binString = numOfBits.format(i)
+		variableList = []
+		for bit in binString:
+			if bit == '0' :
+				variableList.append(False)
+			else:
+				variableList.append(True)
+		
+		if(eval(expr)):
+			returnList = variableList
+			break;
 			
+	return returnList
+
+
+def booleanStringSentence(sentence):
+	if (sentence[0] not in operators):
+		if(not(isinstance(sentence,list))):
+			return "variableList["+str(symbols.index(sentence))+"]"
 		
+	else:
+		if(sentence[0] == 'not'):
+			return "not("+booleanStringSentence(sentence[1])+")"
 		
-	
-	
+		elif(sentence[0] == 'or'):
+			temp = "( "+booleanStringSentence(sentence[1])
+			for i in range(2,len(sentence)):
+				temp += " or " + booleanStringSentence(sentence[i])
+			temp += " )"
+			return temp
+				
+		elif(sentence[0] == 'and'):
+			temp = "( "+booleanStringSentence(sentence[1])
+			for i in range(2,len(sentence)):
+				temp += " and " + booleanStringSentence(sentence[i])
+			temp += " )"
+			return temp
+			
 def DPLL_Satisfiable(sentence):
 	symbols = getSymbols(sentence)
 	clauses = getClauses(sentence)
 	var = []
 	for symbol in symbols:
-			var.append('True')
-	return DPLL(clauses,symbols,var), symbols
+			var.append(True)
+	var = DPLL(clauses,symbols,var)
+	
+	if(var == None):
+		expr = booleanStringSentence(sentence)
+		var = SATAssignment(expr)
+		
+	return var, symbols
+	
+	
+
 
 linenum = 1
 sentCount = -1
@@ -173,7 +247,6 @@ if(sentCount != numSent):
 
 else:
 	linenum = 1
-	print "hi"
 	inputFile.seek(0,0)
 	for line in inputFile:
 		if(linenum == 1):
@@ -181,15 +254,24 @@ else:
 			continue
 		sentence = eval(line)
 		symbols = []
-		clauses = []
-		model = []
-		variable = []
-		print DPLL_Satisfiable(sentence)
+		var = []
+		var, symbols = DPLL_Satisfiable(sentence)
 		#print booleanStringSenstence(sentence)
+		satList = []
+		if(len(var)>0) :
+			satList += ['true']
+			for i in range(len(var)):
+				satList += [symbols[i] + '=' + str(var[i]).lower()]
+		else:
+			satList += ['false']
+			
+		print satList
 		
-'''ua = ""
-if(eval('ua or ua')):
+		outputFile.write(str(satList)+"\n")
+'''		
+ua = None
+if(eval('ua or True')):
 	print "a"
 elif(eval('ua or ua')==False):
 	print "b"
-print eval('not(ua)')'''
+print not(None)'''
