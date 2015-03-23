@@ -131,6 +131,8 @@ def idempotency(mylist):
 			if ( (not(isMember(returnList, mylist[i]) ))):
 				returnList.append(mylist[i])
 		
+		if(len(returnList)==2 and mylist[0] != 'not'):
+			return returnList[1]
 		return returnList
 	
 	else:
@@ -178,7 +180,6 @@ clauseCount = -1;
 numClauses = 0
 for line in inputFile:
 	if(clauseCount == -1):
-		print type(line)
 		numClauses = eval(line)
 	clauseCount += 1
 
