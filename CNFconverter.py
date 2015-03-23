@@ -197,7 +197,10 @@ if(clauseCount == numClauses):
 		dinf = deMorganAndInvolution(nf)
 		inf = idempotency(dinf)
 		cnf = idempotency(deMorganAndInvolution(checkDNFClause(inf)))
-		outputFile.write(str(cnf)+"\n")   
+		if(len(cnf)==1):
+			outputFile.write('\''+str(cnf)+'\'\n')
+		else:
+			outputFile.write(str(cnf)+"\n")   
 else:
 	print "Clauses count do no match with the number of clauses mentioned in the file"
 
